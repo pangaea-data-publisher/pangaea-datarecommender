@@ -49,7 +49,7 @@ def main():
         # append old dataframe
         df_old = pd.read_csv(c1.DATAFRAME_FILE)
         logging.info("Existing DF Shape : %s ", str(df_old.shape))
-        if main_df:
+        if not main_df.empty:
             logging.info("Appending DF : %s ", str(main_df.shape))
             main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
         else:
@@ -57,7 +57,7 @@ def main():
         logging.info("Final DF Shape : %s ", str(main_df.shape))
         del df_old
 
-    if main_df is not None:
+    if not main_df.empty:
         logging.info("Excluding non-published datasets...")
         main_df.to_csv(DATAFRAME_FILE, index=False)
         #updtae config file
