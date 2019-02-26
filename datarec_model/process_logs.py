@@ -5,7 +5,7 @@ import datetime
 import multiprocessing
 import os
 import urllib
-import numpy as np
+import logging
 
 class ProcessLogs:
     def __init__(self,cfg, cfgFile):
@@ -26,6 +26,7 @@ class ProcessLogs:
         self.last_harvest_date = (config['DATASOURCE']['last_harvest_date'])
         self.date_pattern = re.compile(r'\b(\d{8})0000.bz2\b')
         self.DATAFRAME_FILE = os.path.join(self.parent_dir, config['DATASOURCE']['dataframe_file'])
+        self.last_date = None
 
     def readLogs(self):
         #dirs = os.path.join(self.parent_dir, self.source_dir)
@@ -58,14 +59,19 @@ class ProcessLogs:
             dates = (self.get_date(fn) for fn in file_list)
             last_date = (d for d in dates if d is not None)
             last_date = max(last_date)
-            last_date = last_date.strftime('%Y%m%d')
-            # write to config file
-            config.set('DATASOURCE', 'last_harvest_date', last_date)
-            with open(configFile, 'w+') as configfile:
-                config.write(configfile)
+            self.last_date = last_date.strftime('%Y%m%d')
             return df_final
         else:
             return None
+
+    def updateConfigFile(self):
+        # write to config file
+        if self.last_date:
+            config.set('DATASOURCE', 'last_harvest_date', self.last_date)
+            with open(configFile, 'w+') as configfile:
+                config.write(configfile)
+            logging.info("Last Harvest Date Updated! : ", str(self.last_date))
+
 
     # wrap your csv importer in a function that can be mapped
     def read_csv(self, filename):

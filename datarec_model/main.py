@@ -37,23 +37,31 @@ def main():
     #2. read and clean logs
     c1 = process_logs.ProcessLogs(config,configFile)
     main_df = c1.readLogs()
-    # get request uri, extract data id
-    main_df['_id'] = main_df['request'].str.extract(r'PANGAEA.\s*(\d+)')
-    main_df = main_df.dropna(subset=['_id'], how='all')
-    main_df['_id'] = main_df['_id'].astype(int)
+    if main_df:
+        # get request uri, extract data id
+        main_df['_id'] = main_df['request'].str.extract(r'PANGAEA.\s*(\d+)')
+        main_df = main_df.dropna(subset=['_id'], how='all')
+        main_df['_id'] = main_df['_id'].astype(int)
 
     df_old = None
     if c1.last_harvest_date != 'none':
         # append old dataframe
         df_old = pd.read_csv(c1.DATAFRAME_FILE)
         logging.info("Existing DF Shape : %s ", str(df_old.shape))
-        main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
-        logging.info("Appended DF Shape : %s ", str(main_df.shape))
+        if main_df:
+            logging.info("Appending DF : %s ", str(main_df.shape))
+            main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
+        else:
+            main_df = df_old
+        logging.info("Final DF Shape : %s ", str(main_df.shape))
         del df_old
 
     if main_df is not None:
         logging.info("DF Shape :%s ", str(main_df.shape))
         main_df.to_csv(DATAFRAME_FILE, index=False)
+        #updtae config file
+        c1.updateConfigFile()
+
         main_df = main_df[main_df['_id'].isin(list_published_datasets)]
         logging.info("DF with only published datasets : %s", str(main_df.shape))
 
