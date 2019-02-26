@@ -1,11 +1,5 @@
 datarec_model/results/
-datarec_model/.idea/encodings.xml
-datarec_model/.idea/misc.xml
-datarec_model/.idea/modules.xml
-datarec_model/.idea/pang_datarec.iml
-datarec_model/.idea/workspace.xml
-datarec_model/__pycache__/infer_reldataset.cpython-36.pyc
-datarec_model/__pycache__/process_logs.cpython-36.pyc
-datarec_model/__pycache__/published_datasets.cpython-36.pyc
+datarec_model/.idea
+datarec_model/__pycache__
 datarec_model/config/readme
 datarec_model/config/usage.ini
