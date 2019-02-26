@@ -68,7 +68,7 @@ class PublishedDataset:
             ids.append(dobj["_id"])
         logging.info('Number of datasets: %s',str(len(ids)))
 
-        with open(usage_dir+self.data_file_dir,'wb') as fp:
+        with open(self.data_file_dir,'wb') as fp:
             pickle.dump(ids, fp)
 
         #secs =  (time.time() - start_time)
