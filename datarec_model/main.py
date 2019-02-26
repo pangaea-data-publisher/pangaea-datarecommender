@@ -37,8 +37,9 @@ def main():
     #2. read and clean logs
     c1 = process_logs.ProcessLogs(config,configFile)
     main_df = c1.readLogs()
-    if main_df:
+    if not main_df.empty:
         # get request uri, extract data id
+        logging.info("Extracting id from request param...")
         main_df['_id'] = main_df['request'].str.extract(r'PANGAEA.\s*(\d+)')
         main_df = main_df.dropna(subset=['_id'], how='all')
         main_df['_id'] = main_df['_id'].astype(int)

@@ -62,7 +62,7 @@ class ProcessLogs:
             self.last_date = last_date.strftime('%Y%m%d')
             return df_final
         else:
-            return None
+            return pd.DataFrame() #creates a new dataframe that's empty
 
     def updateConfigFile(self):
         # write to config file
