@@ -70,7 +70,7 @@ class ProcessLogs:
             config.set('DATASOURCE', 'last_harvest_date', self.last_date)
             with open(configFile, 'w+') as configfile:
                 config.write(configfile)
-            logging.info("Last Harvest Date Updated! : ", str(self.last_date))
+            logging.info("Last Harvest Date Updated! :%s ", self.last_date)
 
 
     # wrap your csv importer in a function that can be mapped

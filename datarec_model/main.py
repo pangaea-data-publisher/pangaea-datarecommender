@@ -10,6 +10,7 @@ import published_datasets,process_logs,infer_reldataset
 #import process_logs
 #import infer_reldataset
 from itertools import chain
+from multiprocessing import Process
 
 def main():
     #set logging info
@@ -20,14 +21,14 @@ def main():
     ap.add_argument("-c", "--config", required=True, help="Path to import.ini config file")
     args = ap.parse_args()
     global config
-    global configFile
+    global configFile,query_file
     config = ConfigParser.ConfigParser()
     configFile = args.config
     config.read(configFile)
     #parent_dir = os.path.dirname(os.path.abspath(__file__)) C:\Users\anusu\python-workspace\pangaea-recsys\recommender
     query_file = config['DATASOURCE']['query_file']
     DATAFRAME_FILE = config['DATASOURCE']['dataframe_file']
-
+    global start_time
     #1. import recent datasets
     start_time = time.time()
     logging.info('Importing published datasets...')
@@ -66,34 +67,41 @@ def main():
         main_df = main_df[main_df['_id'].isin(list_published_datasets)]
         logging.info("DF with only published datasets : %s", str(main_df.shape))
 
-        ####### 3. get query terms
-        # exlude rows that contains old data
-        logging.info("Start - Related Datasets By Query...")
+        # ####### 3. get query terms
+        # # exlude rows that contains old data
+        # logging.info("Start - Related Datasets By Query...")
+        # df_query = main_df.copy()
+        # # only select referer related to pangaea, get query terms for each datasets
+        # domains = ['doi.pangaea.de', 'www.pangaea.de', '/search?']
+        # domains_joins = '|'.join(map(re.escape, domains))
+        # df_query = df_query[(df_query.referer.str.contains(domains_joins))]
+        # df_query = c1.getQueryTerms(df_query)
+        # df_query = df_query.reset_index()
+        # df_query = df_query.set_index('_id')
+        # #logging.info('Query Dataframe Shape: ' + str(df_query.shape))
+        # df_query.to_json(query_file, orient='index')
+        # secs = (time.time() - start_time)
+        # del df_query
+        # logging.info('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
+
+        # ####### 4. get usage related datasets
+        # logging.info("Start - Related Datasets By Downloads...")
+        # download_indicators = ['format=textfile', 'format=html', 'format=zip']
+        # download_joins = '|'.join(map(re.escape, download_indicators))
+        # main_df = main_df[(main_df.request.str.contains(download_joins))]
+        # main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
+        # main_df = main_df[['ip', '_id']]
+        #
+        # dwnInst = infer_reldataset.InferRelData(config)
+        # dwnInst.get_Total_Related_Downloads(main_df)
+        # del main_df
         df_query = main_df.copy()
-        # only select referer related to pangaea, get query terms for each datasets
-        domains = ['doi.pangaea.de', 'www.pangaea.de', '/search?']
-        domains_joins = '|'.join(map(re.escape, domains))
-        df_query = df_query[(df_query.referer.str.contains(domains_joins))]
-        df_query = c1.getQueryTerms(df_query)
-        df_query = df_query.reset_index()
-        df_query = df_query.set_index('_id')
-        #logging.info('Query Dataframe Shape: ' + str(df_query.shape))
-        df_query.to_json(query_file, orient='index')
-        secs = (time.time() - start_time)
-        del df_query
-        logging.info('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
-
-        ####### 4. get usage related datasets
-        logging.info("Start - Related Datasets By Downloads...")
-        download_indicators = ['format=textfile', 'format=html', 'format=zip']
-        download_joins = '|'.join(map(re.escape, download_indicators))
-        main_df = main_df[(main_df.request.str.contains(download_joins))]
-        main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
-        main_df = main_df[['ip', '_id']]
-
-        dwnInst = infer_reldataset.InferRelData(config)
-        dwnInst.get_Total_Related_Downloads(main_df)
-        del main_df
+        p1 = Process(target=computeRelDatasetsByQuery,args=[df_query,c1,query_file])
+        p1.start()
+        p2 = Process(target=computeRelDatasetsByDownload,args=[main_df,config])
+        p2.start()
+        p1.join() #wait for this [thread/process] to complete
+        p2.join()
 
         ######## 5. merge results
         JSONDOWNLOAD_FILE = config['DATASOURCE']['download_file']
@@ -104,6 +112,7 @@ def main():
         logging.info("Merge - Difference : %s", str(len(list(set(queries.keys()) - set(downloads.keys())))))
         super_dict = {}
         for k, v in chain(downloads.items(), queries.items()):
+            #print(k)
             k = int(k)
             super_dict.setdefault(k, {}).update(v)
         logging.info("Len Merge : %s", str(len(super_dict.keys())))
@@ -116,6 +125,37 @@ def main():
     secs = (time.time() - start_time)
     logging.info('Total Run Time: ' + str(datetime.timedelta(seconds=secs)))
     logging.info('--------------------------------')
+
+def computeRelDatasetsByQuery(main_df,c1,query_file):
+    start_time1 = time.time()
+    ####### 3. get query terms
+    # exlude rows that contains old data
+    logging.info("Start - Related Datasets By Query...")
+    df_query = main_df.copy()
+    # only select referer related to pangaea, get query terms for each datasets
+    domains = ['doi.pangaea.de', 'www.pangaea.de', '/search?']
+    domains_joins = '|'.join(map(re.escape, domains))
+    df_query = df_query[(df_query.referer.str.contains(domains_joins))]
+    df_query = c1.getQueryTerms(df_query)
+    df_query = df_query.reset_index()
+    df_query = df_query.set_index('_id')
+    # logging.info('Query Dataframe Shape: ' + str(df_query.shape))
+    df_query.to_json(query_file, orient='index')
+    secs = (time.time() - start_time1)
+    del df_query
+    logging.info('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
+
+def computeRelDatasetsByDownload(main_df,config):
+    logging.info("Start - Related Datasets By Downloads...")
+    download_indicators = ['format=textfile', 'format=html', 'format=zip']
+    download_joins = '|'.join(map(re.escape, download_indicators))
+    main_df = main_df[(main_df.request.str.contains(download_joins))]
+    main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
+    main_df = main_df[['ip', '_id']]
+
+    dwnInst = infer_reldataset.InferRelData(config)
+    dwnInst.get_Total_Related_Downloads(main_df)
+    del main_df
 
 
 if __name__ == "__main__":

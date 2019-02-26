@@ -91,7 +91,7 @@ class InferRelData:
                 if target_id in relrow:
                     del simrow[relrow.index(target_id)]
                     relrow.remove(target_id)
-                remove_indices = [a for a, b in enumerate(simrow) if b < self.SIM_THRESHOLD]
+                remove_indices = {a for a, b in enumerate(simrow) if b < self.SIM_THRESHOLD}
                 if remove_indices:
                     relrow = [x for y, x in enumerate(relrow) if y not in remove_indices]
                     simrow = [e for f, e in enumerate(simrow) if f not in remove_indices]
