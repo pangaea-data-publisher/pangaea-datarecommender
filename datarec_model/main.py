@@ -59,11 +59,11 @@ def main():
         del df_old
 
     if not main_df.empty:
-        logging.info("Excluding non-published datasets...")
+        logging.info("Write dataframe file to disk...")
         main_df.to_csv(DATAFRAME_FILE, index=False)
-        #updtae config file
         c1.updateConfigFile()
 
+        logging.info("Excluding non-published datasets...")
         main_df = main_df[main_df['_id'].isin(list_published_datasets)]
         logging.info("DF with only published datasets : %s", str(main_df.shape))
 
