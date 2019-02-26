@@ -29,12 +29,13 @@ logging.getLogger("elasticsearch").setLevel(logging.WARNING)
 
 class PublishedDataset:
 
-    def  __init__(self):
+    def  __init__(self,config):
         self.es = Elasticsearch('http://ws.pangaea.de/es',port=80)
         self.ES_INDEX='pangaea'
         self.DOC_TYPE= 'panmd'
         self.size = 1000
-        self.data_file_dir = '/pang_datarec/results/ids.p'
+        #self.data_file_dir = '/pang_datarec/results/ids.p'
+        self.data_file_dir = config['DATASOURCE']['publised_data']
 
     def getDatasets(self):
         #start_time = time.time()
@@ -61,13 +62,13 @@ class PublishedDataset:
                 scroll_size = len(rs['hits']['hits'])
             except:
                 break
-        usage_dir = dirname(dirname(abspath(__file__)))
+        #usage_dir = dirname(dirname(abspath(__file__)))
         ids =[]
         for dobj in data:
             ids.append(dobj["_id"])
         logging.info('Number of datasets: %s',str(len(ids)))
 
-        with open(usage_dir+self.data_file_dir,'wb') as fp:
+        with open(self.data_file_dir,'wb') as fp:
             pickle.dump(ids, fp)
 
         #secs =  (time.time() - start_time)
