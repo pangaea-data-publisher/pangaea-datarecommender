@@ -62,13 +62,13 @@ class PublishedDataset:
                 scroll_size = len(rs['hits']['hits'])
             except:
                 break
-        #usage_dir = dirname(dirname(abspath(__file__)))
+        usage_dir = dirname(dirname(abspath(__file__)))
         ids =[]
         for dobj in data:
             ids.append(dobj["_id"])
         logging.info('Number of datasets: %s',str(len(ids)))
 
-        with open(self.data_file_dir,'wb') as fp:
+        with open(usage_dir+self.data_file_dir,'wb') as fp:
             pickle.dump(ids, fp)
 
         #secs =  (time.time() - start_time)
