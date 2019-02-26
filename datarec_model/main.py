@@ -31,7 +31,7 @@ def main():
     #1. import recent datasets
     start_time = time.time()
     logging.info('Importing published datasets...')
-    pubInst = published_datasets.PublishedDataset()
+    pubInst = published_datasets.PublishedDataset(config)
     list_published_datasets = pubInst.getDatasets()
 
     #2. read and clean logs
