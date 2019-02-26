@@ -57,7 +57,7 @@ def main():
         del df_old
 
     if main_df is not None:
-        logging.info("DF Shape :%s ", str(main_df.shape))
+        logging.info("Excluding non-published datasets...")
         main_df.to_csv(DATAFRAME_FILE, index=False)
         #updtae config file
         c1.updateConfigFile()
@@ -67,6 +67,7 @@ def main():
 
         ####### 3. get query terms
         # exlude rows that contains old data
+        logging.info("Start - Related Datasets By Query...")
         df_query = main_df.copy()
         # only select referer related to pangaea, get query terms for each datasets
         domains = ['doi.pangaea.de', 'www.pangaea.de', '/search?']
@@ -82,6 +83,7 @@ def main():
         logging.info('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
 
         ####### 4. get usage related datasets
+        logging.info("Start - Related Datasets By Downloads...")
         download_indicators = ['format=textfile', 'format=html', 'format=zip']
         download_joins = '|'.join(map(re.escape, download_indicators))
         main_df = main_df[(main_df.request.str.contains(download_joins))]
