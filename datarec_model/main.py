@@ -45,23 +45,22 @@ def main():
         main_df = main_df.dropna(subset=['_id'], how='all')
         main_df['_id'] = main_df['_id'].astype(int)
 
-    df_old = None
-    if c1.last_harvest_date != 'none':
-        # append old dataframe
-        df_old = pd.read_csv(c1.DATAFRAME_FILE)
-        logging.info("Existing DF Shape : %s ", str(df_old.shape))
-        if not main_df.empty:
-            logging.info("Appending DF : %s ", str(main_df.shape))
-            main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
-        else:
-            main_df = df_old
-        logging.info("Final DF Shape : %s ", str(main_df.shape))
-        del df_old
+        df_old = None
+        if c1.last_harvest_date != 'none':
+            # append old dataframe
+            df_old = pd.read_csv(c1.DATAFRAME_FILE)
+            logging.info("Existing DF Shape : %s ", str(df_old.shape))
+            if not main_df.empty:
+                logging.info("Appending DF : %s ", str(main_df.shape))
+                main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
+            else:
+                main_df = df_old
+            logging.info("Final DF Shape : %s ", str(main_df.shape))
+            del df_old
 
-    if not main_df.empty:
         logging.info("Excluding non-published datasets...")
         main_df.to_csv(DATAFRAME_FILE, index=False)
-        #updtae config file
+            #updtae config file
         c1.updateConfigFile()
 
         main_df = main_df[main_df['_id'].isin(list_published_datasets)]
@@ -143,7 +142,7 @@ def computeRelDatasetsByQuery(main_df,c1,query_file):
     df_query.to_json(query_file, orient='index')
     secs = (time.time() - start_time1)
     del df_query
-    logging.info('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
+    print('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
 
 def computeRelDatasetsByDownload(main_df,config):
     logging.info("Start - Related Datasets By Downloads...")
