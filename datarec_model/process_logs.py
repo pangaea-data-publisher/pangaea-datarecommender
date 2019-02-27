@@ -27,11 +27,12 @@ class ProcessLogs:
         self.date_pattern = re.compile(r'\b(\d{8})0000.bz2\b')
         self.DATAFRAME_FILE = os.path.join(self.parent_dir, config['DATASOURCE']['dataframe_file'])
         self.last_date = None
+        self.number_of_processes=  int(config['DATASOURCE']['number_of_processes'])
 
     def readLogs(self):
         #dirs = os.path.join(self.parent_dir, self.source_dir)
         # set up your pool
-        pool = multiprocessing.Pool()  # or whatever your hardware can support
+        pool = multiprocessing.Pool(self.number_of_processes)  # or whatever your hardware can support
         # get a list of file names
         files = os.listdir(self.source_dir)
         file_list = [os.path.join(self.source_dir, filename) for filename in files if filename.startswith(self.source_file_prefix) and filename.endswith(self.source_file_suffix)]
@@ -125,15 +126,15 @@ class ProcessLogs:
 
     def getQueryTerms(self, df_final):
         # identify first and second degree queries
-        df_final['query_1'] = df_final['referer'].map(self.get_query)
+        #df_final['query_1'] = df_final['referer'].map(self.get_query)
+        df_final['query_1']=df_final['referer'].map(self.get_query)
         df_final['query_2'] = ""
+        #df_final.loc[:, 'query_2'] = ""
         df_final = df_final[['ip', '_id', 'query_1', 'query_2', 'time']]
-
         first = df_final.groupby(by=['ip', 'time'])
         first_filtered = first.filter(lambda x: len(x[x['query_1'] != ""]) > 0)
         second = first_filtered.groupby(by=['ip', 'time'])
         filtered = second.filter(lambda x: len(x[x['query_1'] == ""]) > 0)
-
         for (i1, row1), (i2, row2) in self.pairwise(filtered.iterrows()):
             if ((row1["query_1"] != "") and (row2["query_1"] == "")):
                 #filtered.set_value(i2, 'query_2', row1["query_1"]) #index, col, value
@@ -150,6 +151,16 @@ class ProcessLogs:
         return dfgroup
 
     def get_query(self, url):
+        qparams = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(url).query))
+        query_string = ""
+        if len(qparams) > 0:
+            for key in qparams:
+                if re.match(r'f[.]|q|t|p', key):
+                    query_string += qparams[key] + " "
+        return query_string
+
+    def get_query_temp(self, row):
+        url = row['A']
         qparams = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(url).query))
         query_string = ""
         if len(qparams) > 0:

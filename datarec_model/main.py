@@ -7,10 +7,10 @@ import time
 import datetime
 import logging
 import published_datasets,process_logs,infer_reldataset
-#import process_logs
-#import infer_reldataset
+import copy
 from itertools import chain
 from multiprocessing import Process
+import gc
 
 def main():
     #set logging info
@@ -41,34 +41,36 @@ def main():
     if not main_df.empty:
         # get request uri, extract data id
         logging.info("Extracting id from request param...")
-        main_df['_id'] = main_df['request'].str.extract(r'PANGAEA.\s*(\d+)')
+        #main_df['_id'] = main_df['request'].str.extract(r'PANGAEA.\s*(\d+)')
+        #main_df = main_df.dropna(subset=['_id'], how='all')
+        #main_df['_id'] = main_df['_id'].astype(int)
+        main_df.loc[:, '_id'] = main_df['request'].str.extract(r'PANGAEA.\s*(\d+)',expand=False)
         main_df = main_df.dropna(subset=['_id'], how='all')
-        main_df['_id'] = main_df['_id'].astype(int)
+        main_df.loc[:, '_id'] = main_df['_id'].astype(int)
 
+        #if not main_df.empty:  # dataframe might be empty afterer dropna and extract operation
         df_old = None
         if c1.last_harvest_date != 'none':
             # append old dataframe
             df_old = pd.read_csv(c1.DATAFRAME_FILE)
-            logging.info("Existing DF Shape : %s ", str(df_old.shape))
-            if not main_df.empty:
-                logging.info("Appending DF : %s ", str(main_df.shape))
-                main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
-            else:
-                main_df = df_old
-            logging.info("Final DF Shape : %s ", str(main_df.shape))
+            logging.info("Appending DF shape : %s ", str(main_df.shape))
+            main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
             del df_old
+            gc.collect()
+        else:
+            logging.info("New DF (no append) : %s ", str(main_df.shape))
 
-<<<<<<< HEAD
-        logging.info("Excluding non-published datasets...")
+        #TO-DO:
+        logging.info("Writing DF to an external file...")
         main_df.to_csv(DATAFRAME_FILE, index=False)
-            #updtae config file
-=======
-    if not main_df.empty:
-        logging.info("Write dataframe file to disk...")
-        main_df.to_csv(DATAFRAME_FILE, index=False)
->>>>>>> 0cc3b9d78edde66fb682b072307278cbd8c70acf
+
+        logging.info("Updating harvest date in config file...")
         c1.updateConfigFile()
+    else:
+        main_df=pd.read_csv(c1.DATAFRAME_FILE)
+        logging.info("No changes found!")
 
+    if not main_df.empty:
         logging.info("Excluding non-published datasets...")
         main_df = main_df[main_df['_id'].isin(list_published_datasets)]
         logging.info("DF with only published datasets : %s", str(main_df.shape))
@@ -101,13 +103,19 @@ def main():
         # dwnInst = infer_reldataset.InferRelData(config)
         # dwnInst.get_Total_Related_Downloads(main_df)
         # del main_df
-        df_query = main_df.copy()
-        p1 = Process(target=computeRelDatasetsByQuery,args=[df_query,c1,query_file])
+
+        p1 = Process(target=computeRelDatasetsByQuery,args=[main_df,c1,query_file])
+        logging.info("Start - Related Datasets By Query...")
         p1.start()
-        p2 = Process(target=computeRelDatasetsByDownload,args=[main_df,config])
-        p2.start()
+        logging.info("Start - Related Datasets By Downloads...")
+        computeRelDatasetsByDownload(main_df,config)
+        del main_df
+        gc.collect()
+        #p2 = Process(target=computeRelDatasetsByDownload,args=[main_df,config])
+        #p2.start()
         p1.join() #wait for this [thread/process] to complete
-        p2.join()
+        #p2.join()
+        logging.info("End - Related Datasets By Query and Download...")
 
         ######## 5. merge results
         JSONDOWNLOAD_FILE = config['DATASOURCE']['download_file']
@@ -118,7 +126,6 @@ def main():
         logging.info("Merge - Difference : %s", str(len(list(set(queries.keys()) - set(downloads.keys())))))
         super_dict = {}
         for k, v in chain(downloads.items(), queries.items()):
-            #print(k)
             k = int(k)
             super_dict.setdefault(k, {}).update(v)
         logging.info("Len Merge : %s", str(len(super_dict.keys())))
@@ -126,18 +133,16 @@ def main():
         with open(r'results/usage_' + timestr + '.json', 'w') as outfile:
             json.dump(super_dict, outfile)
     else:
-        logging.info("No changes found!")
+        logging.info("Empty dataframe after exclude operation...")
 
     secs = (time.time() - start_time)
     logging.info('Total Run Time: ' + str(datetime.timedelta(seconds=secs)))
     logging.info('--------------------------------')
 
-def computeRelDatasetsByQuery(main_df,c1,query_file):
-    start_time1 = time.time()
+def computeRelDatasetsByQuery(df_query,c1,query_file):
+    #start_time1 = time.time()
     ####### 3. get query terms
     # exlude rows that contains old data
-    logging.info("Start - Related Datasets By Query...")
-    df_query = main_df.copy()
     # only select referer related to pangaea, get query terms for each datasets
     domains = ['doi.pangaea.de', 'www.pangaea.de', '/search?']
     domains_joins = '|'.join(map(re.escape, domains))
@@ -147,12 +152,12 @@ def computeRelDatasetsByQuery(main_df,c1,query_file):
     df_query = df_query.set_index('_id')
     # logging.info('Query Dataframe Shape: ' + str(df_query.shape))
     df_query.to_json(query_file, orient='index')
-    secs = (time.time() - start_time1)
+    #secs = (time.time() - start_time1)
     del df_query
-    print('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
+    gc.collect()
+    #print('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
 
 def computeRelDatasetsByDownload(main_df,config):
-    logging.info("Start - Related Datasets By Downloads...")
     download_indicators = ['format=textfile', 'format=html', 'format=zip']
     download_joins = '|'.join(map(re.escape, download_indicators))
     main_df = main_df[(main_df.request.str.contains(download_joins))]
@@ -161,7 +166,6 @@ def computeRelDatasetsByDownload(main_df,config):
 
     dwnInst = infer_reldataset.InferRelData(config)
     dwnInst.get_Total_Related_Downloads(main_df)
-    del main_df
 
 
 if __name__ == "__main__":

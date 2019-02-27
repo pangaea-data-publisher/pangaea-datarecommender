@@ -30,9 +30,9 @@ logging.getLogger("elasticsearch").setLevel(logging.WARNING)
 class PublishedDataset:
 
     def  __init__(self,config):
-        self.es = Elasticsearch('http://ws.pangaea.de/es',port=80)
-        self.ES_INDEX='pangaea'
-        self.DOC_TYPE= 'panmd'
+        self.es = Elasticsearch(config['DATASOURCE']['elastic_url'] )
+        self.ES_INDEX=config['DATASOURCE']['elastic_index']
+        self.DOC_TYPE= config['DATASOURCE']['elastic_type']
         self.size = 1000
         #self.data_file_dir = '/pang_datarec/results/ids.p'
         self.data_file_dir = config['DATASOURCE']['publised_data']
@@ -49,7 +49,7 @@ class PublishedDataset:
                })
         data = []
         sid = rs['_scroll_id']
-        scroll_size = rs['hits']['total']
+        scroll_size = len(rs['hits']['hits'])
         #print(scroll_size)
         #before you scroll, process your current batch of hits
         data = rs['hits']['hits']

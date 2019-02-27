@@ -19,6 +19,8 @@ class InferRelData:
         self.SIM_THRESHOLD = float(cfg['DATASOURCE']['sim_threshold'])
         self.DATALIST_FILE = cfg['DATASOURCE']['datalist_file']
         self.IPLIST_FILE = cfg['DATASOURCE']['iplist_file']
+        self.output_top_k = int(cfg['DATASOURCE']['output_top_k'])
+        self.output_max_top_k = int(cfg['DATASOURCE']['output_max_top_k'])
         #self.SIM_SPARSE_FILE = os.path.join(self.parent_dir, config['DATASOURCE']['sim_sparse_file'])
 
     def get_Total_Related_Downloads(self, dfmain):
@@ -97,6 +99,11 @@ class InferRelData:
                     simrow = [e for f, e in enumerate(simrow) if f not in remove_indices]
                 #downloads = download_count.loc[download_count._id == target_id, 'count'].values[0]
                 if relrow:
+                    if (len(relrow) >= self.output_top_k):
+                        indices_max = max([i for i, x in enumerate(simrow) if x == simrow[self.output_top_k - 1]]) + 1
+                        indices_max = min(self.output_max_top_k, indices_max)
+                        relrow = relrow[0:indices_max]
+                        simrow = simrow[0:indices_max]
                     dt = {}
                     dt['related_datasets'] = relrow
                     #dt['similarities'] = ['%.5f' % elem for elem in simrow]
@@ -105,6 +112,7 @@ class InferRelData:
                     json_data[str(target_id)] = dt
                 target_idx = target_idx + 1
             del similarities, reverse_idx, related_datasets, remove_indices,relrow,simrow
+            gc.collect()
         #logging.info("Cosine Sim Compute : %s mins " % ((time.time() - starttime) / 60))
         secs = (time.time() - starttime)
         logging.info('Cosine Sim Compute : ' + str(datetime.timedelta(seconds=secs)))
