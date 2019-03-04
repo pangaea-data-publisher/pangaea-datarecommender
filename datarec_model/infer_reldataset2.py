@@ -51,7 +51,7 @@ class InferRelData:
         col = group.ip.astype(pd.api.types.CategoricalDtype(categories=person_u)).cat.codes
         len_dataset = len(dataset_u)
         len_person = len(person_u)
-        logging.info("Datasets vs Ips :%s %s", str(len_dataset), str(len_person))  # 310170 81649
+        logging.info("Download Matrix - Datasets vs Ips :%s %s", str(len_dataset), str(len_person))  # 310170 81649
         sparse_mat = sparse.csr_matrix((data, (row, col)), dtype=np.int8, shape=(len_dataset, len_person))
 
         #normalize sparse matrix

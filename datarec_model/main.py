@@ -63,9 +63,10 @@ def main():
         df_old = None
         if c1.last_harvest_date != 'none':
             # append old dataframe
+            logging.info("Reading existing DF file...")
             df_old = pd.read_csv(c1.DATAFRAME_FILE)
-            logging.info("Appending DF shape : %s ", str(main_df.shape))
             main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
+            logging.info("Appended DF shape : %s ", str(main_df.shape))
             del df_old
             gc.collect()
         else:
@@ -78,8 +79,8 @@ def main():
         logging.info("Updating harvest date in config file...")
         c1.updateConfigFile()
     else:
+        logging.info("No changes (new files) found, so old data (external file) will be used..")
         main_df=pd.read_csv(c1.DATAFRAME_FILE)
-        logging.info("No changes found!")
 
     if not main_df.empty:
         logging.info("Excluding non-published datasets...")

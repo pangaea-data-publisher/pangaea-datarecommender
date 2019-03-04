@@ -150,6 +150,7 @@ class ProcessLogs:
         dfgroup['query_2'] = dfgroup['query_2'].str.strip()
         dfgroup.loc[dfgroup.query_2 == "", 'query_2'] = None
         dfgroup.loc[dfgroup.query_1 == "", 'query_1'] = None
+        print('Query computation complete!')
         return dfgroup
 
     def get_query(self, url):
