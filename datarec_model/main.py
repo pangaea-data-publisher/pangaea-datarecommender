@@ -6,7 +6,7 @@ import pandas as pd
 import time
 import datetime
 import logging
-import published_datasets,process_logs,infer_reldataset2
+import published_datasets,process_logs,infer_reldataset
 from itertools import chain
 from multiprocessing import Process
 import gc
@@ -177,8 +177,8 @@ def computeRelDatasetsByDownload(main_df,config):
     main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
     main_df = main_df[['ip', '_id']]
 
-    #dwnInst = infer_reldataset.InferRelData(config)
-    dwnInst = infer_reldataset2.InferRelData(config)
+    dwnInst = infer_reldataset.InferRelData(config)
+    #dwnInst = infer_reldataset2.InferRelData(config)
     dwnInst.get_Total_Related_Downloads(main_df)
 
 

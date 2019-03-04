@@ -45,7 +45,7 @@ class InferRelData:
         col = group.ip.astype(pd.api.types.CategoricalDtype(categories=person_u)).cat.codes
         len_dataset = len(dataset_u)
         len_person = len(person_u)
-        logging.info("Datasets vs Ips :%s %s", str(len_dataset), str(len_person))  # 310170 81649
+        logging.info("Download Matrix - Datasets vs Ips :%s %s", str(len_dataset), str(len_person))  # 310170 81649
         df_sparse = sparse.csr_matrix((data, (row, col)), dtype=np.int8, shape=(len_dataset, len_person))
         #logging.info('Sparse matrix size in bytes:%s', str(df_sparse.data.nbytes))  # 4004550
 
@@ -62,8 +62,9 @@ class InferRelData:
 
         del dfmain, filtered, filtered_by, f_datasets, group_df, download_count, group, person_u, data, row, col, len_person
         gc.collect()
-
+        logging.info('Start cosine similarity...')
         json_data = self.cosine_similarity_n_space(df_sparse, dataset_u, download_dict, len_dataset, self.CHUNK_SIZE)
+        logging.info('Start writing download json...')
         with open(self.JSONDOWNLOAD_FILE, 'w') as fp:
             json.dump(json_data, fp)
         logging.info('Writing download json done!')
