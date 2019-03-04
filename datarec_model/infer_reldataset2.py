@@ -3,7 +3,8 @@ import logging
 import gc
 import json
 from scipy import sparse
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity,linear_kernel
+from sklearn.preprocessing import normalize
 import numpy as np
 import time
 import datetime
@@ -52,6 +53,10 @@ class InferRelData:
         len_person = len(person_u)
         logging.info("Datasets vs Ips :%s %s", str(len_dataset), str(len_person))  # 310170 81649
         sparse_mat = sparse.csr_matrix((data, (row, col)), dtype=np.int8, shape=(len_dataset, len_person))
+
+        #normalize sparse matrix
+        sparse_mat = normalize(sparse_mat, copy=False)
+
         #logging.info('Sparse matrix size in bytes:%s', str(df_sparse.data.nbytes))  # 4004550
 
         # with open(self.DATALIST_FILE, 'w') as f1:
@@ -110,7 +115,8 @@ class InferRelData:
         num_top_dataset = self.TOPK
         topk = num_top_dataset + 1
         rows = sparse_mat[seq]
-        similarities = cosine_similarity(rows, sparse_mat)
+        #similarities = cosine_similarity(rows, sparse_mat)
+        similarities = linear_kernel(rows, sparse_mat)
         reverse_idx = np.argsort(-similarities)
         reverse_idx = reverse_idx[:, :topk]
         related_datasets = np.array([dataset_u[k] for k in reverse_idx.flat]).reshape(reverse_idx.shape)

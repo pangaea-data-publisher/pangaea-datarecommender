@@ -3,7 +3,8 @@ import logging
 import gc
 import json
 from scipy import sparse
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity,linear_kernel
+from sklearn.preprocessing import normalize
 import numpy as np
 import time
 import datetime
@@ -48,13 +49,16 @@ class InferRelData:
         df_sparse = sparse.csr_matrix((data, (row, col)), dtype=np.int8, shape=(len_dataset, len_person))
         #logging.info('Sparse matrix size in bytes:%s', str(df_sparse.data.nbytes))  # 4004550
 
-        with open(self.DATALIST_FILE, 'w') as f1:
-            for item in dataset_u:
-                f1.write("%s\n" % item)
+        # normalize sparse matrix
+        df_sparse = normalize(df_sparse, copy=False)
 
-        with open(self.IPLIST_FILE, 'w') as f2:
-            for item in person_u:
-                f2.write("%s\n" % item)
+        # with open(self.DATALIST_FILE, 'w') as f1:
+        #     for item in dataset_u:
+        #         f1.write("%s\n" % item)
+        #
+        # with open(self.IPLIST_FILE, 'w') as f2:
+        #     for item in person_u:
+        #         f2.write("%s\n" % item)
 
         del dfmain, filtered, filtered_by, f_datasets, group_df, download_count, group, person_u, data, row, col, len_person
         gc.collect()
@@ -77,7 +81,8 @@ class InferRelData:
             if end <= start:
                 break  # to-do: handle this
             rows = mat[start: end]
-            similarities = cosine_similarity(rows, mat)  # rows is O(1) size
+            #similarities = cosine_similarity(rows, mat)  # rows is O(1) size
+            similarities = linear_kernel(rows, mat)
             reverse_idx = np.argsort(-similarities)
             #indices = reverse_idx.ravel()
             # reverse_val = similarities.ravel()[indices]
