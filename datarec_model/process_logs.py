@@ -45,7 +45,8 @@ class ProcessLogs:
                 if file_date > last_harv_date:
                     filtered_file_list.append(f)
             file_list = filtered_file_list
-
+        len_file = str(len(file_list))
+        logging.info('Number of new files : %s', len_file)
         if len(file_list)>0:
             # set up your pool
             pool = multiprocessing.Pool(self.number_of_processes)  # or whatever your hardware can support
@@ -62,6 +63,8 @@ class ProcessLogs:
             last_date = (d for d in dates if d is not None)
             last_date = max(last_date)
             self.last_date = last_date.strftime('%Y%m%d')
+            logging.info('Last_date :%s', str(last_date))
+            logging.info("df_final shape : %s", str(df_final.shape))
             return df_final
         else:
             return pd.DataFrame() #creates a new dataframe that's empty
