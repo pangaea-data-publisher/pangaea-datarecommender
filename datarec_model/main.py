@@ -7,16 +7,25 @@ import time
 import datetime
 import logging
 import published_datasets,process_logs,infer_reldataset2
-import copy
 from itertools import chain
 from multiprocessing import Process
 import gc
+import sys
 
 def main():
     #set logging info
     #logging.basicConfig(format='%(asctime)s %(message)s',filename='pangaea_recsys.log', level=logging.DEBUG)
     logging.basicConfig(level=logging.INFO, filename='pangrecsys.log', filemode="a+",
                         format="%(asctime)s %(levelname)s %(message)s")
+
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
     ap = argparse.ArgumentParser()
     ap.add_argument("-c", "--config", required=True, help="Path to import.ini config file")
     args = ap.parse_args()
@@ -25,6 +34,7 @@ def main():
     config = ConfigParser.ConfigParser()
     configFile = args.config
     config.read(configFile)
+
     #parent_dir = os.path.dirname(os.path.abspath(__file__)) C:\Users\anusu\python-workspace\pangaea-recsys\recommender
     query_file = config['DATASOURCE']['query_file']
     DATAFRAME_FILE = config['DATASOURCE']['dataframe_file']
@@ -115,6 +125,7 @@ def main():
         #p2 = Process(target=computeRelDatasetsByDownload,args=[main_df,config])
         #p2.start()
         p1.join() #wait for this [thread/process] to complete
+        logging.info('Query completed...')
         #p2.join()
         logging.info("End - Related Datasets By Query and Download...")
 

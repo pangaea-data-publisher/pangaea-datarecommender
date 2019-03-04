@@ -87,8 +87,9 @@ class InferRelData:
             pool.apply_async(self.cosine_similarity_n_space_v2, args=(return_dict, seq))
         # Tell the pool that there are no more tasks to come and join
         pool.close()
+        logging.info('Waiting for pool to finish')
         pool.join()
-
+        logging.info('Start writing download json')
         # Print the results
         #for i in return_dict.keys():
             #print(i, return_dict[i])

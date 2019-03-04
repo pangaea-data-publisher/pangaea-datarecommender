@@ -55,6 +55,7 @@ class ProcessLogs:
             # Concatenate all data into one DataFrame
             df_final = pd.concat(df_list, ignore_index=True)
             pool.close()
+            pool.join()
 
             #update config file
             dates = (self.get_date(fn) for fn in file_list)
@@ -127,7 +128,8 @@ class ProcessLogs:
     def getQueryTerms(self, df_final):
         # identify first and second degree queries
         #df_final['query_1'] = df_final['referer'].map(self.get_query)
-        df_final['query_1']=df_final['referer'].map(self.get_query)
+        #df_final['query_1']=df_final['referer'].map(self.get_query)
+        df_final.loc[:, 'query_1']=df_final['referer'].map(self.get_query)
         #df_final['query_2'] = ""
         df_final.loc[:, 'query_2'] = ""
         df_final = df_final[['ip', '_id', 'query_1', 'query_2', 'time']]
