@@ -6,7 +6,7 @@ import pandas as pd
 import time
 import datetime
 import logging
-import published_datasets,process_logs,infer_reldataset
+import published_datasets,process_logs,infer_reldataset2
 import copy
 from itertools import chain
 from multiprocessing import Process
@@ -28,6 +28,7 @@ def main():
     #parent_dir = os.path.dirname(os.path.abspath(__file__)) C:\Users\anusu\python-workspace\pangaea-recsys\recommender
     query_file = config['DATASOURCE']['query_file']
     DATAFRAME_FILE = config['DATASOURCE']['dataframe_file']
+    final_result_file = config['DATASOURCE']['final_result_file']
     global start_time
     #1. import recent datasets
     start_time = time.time()
@@ -129,8 +130,8 @@ def main():
             k = int(k)
             super_dict.setdefault(k, {}).update(v)
         logging.info("Len Merge : %s", str(len(super_dict.keys())))
-        timestr = time.strftime("%Y%m%d")
-        with open(r'results/usage_' + timestr + '.json', 'w') as outfile:
+        #timestr = time.strftime("%Y%m%d")
+        with open(final_result_file, 'w') as outfile:
             json.dump(super_dict, outfile)
     else:
         logging.info("Empty dataframe after exclude operation...")
@@ -164,7 +165,8 @@ def computeRelDatasetsByDownload(main_df,config):
     main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
     main_df = main_df[['ip', '_id']]
 
-    dwnInst = infer_reldataset.InferRelData(config)
+    #dwnInst = infer_reldataset.InferRelData(config)
+    dwnInst = infer_reldataset2.InferRelData(config)
     dwnInst.get_Total_Related_Downloads(main_df)
 
 

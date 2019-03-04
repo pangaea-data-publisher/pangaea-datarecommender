@@ -31,8 +31,6 @@ class ProcessLogs:
 
     def readLogs(self):
         #dirs = os.path.join(self.parent_dir, self.source_dir)
-        # set up your pool
-        pool = multiprocessing.Pool(self.number_of_processes)  # or whatever your hardware can support
         # get a list of file names
         files = os.listdir(self.source_dir)
         file_list = [os.path.join(self.source_dir, filename) for filename in files if filename.startswith(self.source_file_prefix) and filename.endswith(self.source_file_suffix)]
@@ -49,6 +47,8 @@ class ProcessLogs:
             file_list = filtered_file_list
 
         if len(file_list)>0:
+            # set up your pool
+            pool = multiprocessing.Pool(self.number_of_processes)  # or whatever your hardware can support
             # have your pool map the file names to dataframes
             df_list = pool.map(self.read_csv, file_list)
 
@@ -128,8 +128,8 @@ class ProcessLogs:
         # identify first and second degree queries
         #df_final['query_1'] = df_final['referer'].map(self.get_query)
         df_final['query_1']=df_final['referer'].map(self.get_query)
-        df_final['query_2'] = ""
-        #df_final.loc[:, 'query_2'] = ""
+        #df_final['query_2'] = ""
+        df_final.loc[:, 'query_2'] = ""
         df_final = df_final[['ip', '_id', 'query_1', 'query_2', 'time']]
         first = df_final.groupby(by=['ip', 'time'])
         first_filtered = first.filter(lambda x: len(x[x['query_1'] != ""]) > 0)
@@ -159,15 +159,6 @@ class ProcessLogs:
                     query_string += qparams[key] + " "
         return query_string
 
-    def get_query_temp(self, row):
-        url = row['A']
-        qparams = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(url).query))
-        query_string = ""
-        if len(qparams) > 0:
-            for key in qparams:
-                if re.match(r'f[.]|q|t|p', key):
-                    query_string += qparams[key] + " "
-        return query_string
 
     def pairwise(self,iterable):
         "s -> (s0,s1), (s1,s2), (s2, s3), ..."
