@@ -1,5 +1,6 @@
 #!/bin/bash
 
+CURDIR=`dirname $0`
 FILE=$1
 
 # Elasticsearch config
@@ -16,7 +17,7 @@ echo " -- DONE"
 set -e
 
 echo "Recreate index..."
-curl -s -XPUT "$SERVER/$INDEX" --data-binary @indexconfig.json
+curl -s -XPUT "$SERVER/$INDEX" --data-binary @"$CURDIR/indexconfig.json"
 echo " -- DONE"
 
 echo "Importing recommender data..."
