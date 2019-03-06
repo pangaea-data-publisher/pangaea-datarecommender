@@ -130,14 +130,15 @@ class ProcessLogs:
         dates = datetime.datetime.strptime(matched.group(1), '%Y%m%d')
         return dates
 
-    def getQueryTerms(self, df_final):
+    def getQueryTerms(self, df_query):
         # identify first and second degree queries
         #df_final['query_1'] = df_final['referer'].map(self.get_query)
         #df_final['query_1']=df_final['referer'].map(self.get_query)
-        df_final.loc[:, 'query_1']=df_final['referer'].map(self.get_query)
-        #df_final['query_2'] = ""
-        df_final.loc[:, 'query_2'] = ""
-        df_final = df_final[['ip', '_id', 'query_1', 'query_2', 'time']]
+        # df_final['query_2'] = ""
+        #print('---------------------')
+        #df_query.loc[:, 'query_2'] = ""
+        #df_query.loc[:, 'query_1']=df_query['referer'].map(self.get_query)
+        df_final = df_query[['ip', '_id', 'query_1', 'query_2', 'time']]
         first = df_final.groupby(by=['ip', 'time'])
         first_filtered = first.filter(lambda x: len(x[x['query_1'] != ""]) > 0)
         second = first_filtered.groupby(by=['ip', 'time'])
@@ -155,18 +156,8 @@ class ProcessLogs:
         dfgroup['query_2'] = dfgroup['query_2'].str.strip()
         dfgroup.loc[dfgroup.query_2 == "", 'query_2'] = None
         dfgroup.loc[dfgroup.query_1 == "", 'query_1'] = None
-        print('Query computation complete!')
+        #print('Query computation complete!')
         return dfgroup
-
-    def get_query(self, url):
-        qparams = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(url).query))
-        query_string = ""
-        if len(qparams) > 0:
-            for key in qparams:
-                if re.match(r'f[.]|q|t|p', key):
-                    query_string += qparams[key] + " "
-        return query_string
-
 
     def pairwise(self,iterable):
         "s -> (s0,s1), (s1,s2), (s2, s3), ..."

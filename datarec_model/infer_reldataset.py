@@ -18,8 +18,8 @@ class InferRelData:
         self.JSONDOWNLOAD_FILE = cfg['DATASOURCE']['download_file']
         self.TOPK = int(cfg['DATASOURCE']['top_k'])
         self.SIM_THRESHOLD = float(cfg['DATASOURCE']['sim_threshold'])
-        self.DATALIST_FILE = cfg['DATASOURCE']['datalist_file']
-        self.IPLIST_FILE = cfg['DATASOURCE']['iplist_file']
+        #self.DATALIST_FILE = cfg['DATASOURCE']['datalist_file']
+        #self.IPLIST_FILE = cfg['DATASOURCE']['iplist_file']
         self.output_top_k = int(cfg['DATASOURCE']['output_top_k'])
         self.output_max_top_k = int(cfg['DATASOURCE']['output_max_top_k'])
         #self.SIM_SPARSE_FILE = os.path.join(self.parent_dir, config['DATASOURCE']['sim_sparse_file'])
@@ -52,9 +52,9 @@ class InferRelData:
         # normalize sparse matrix
         df_sparse = normalize(df_sparse, copy=False)
 
-        # with open(self.DATALIST_FILE, 'w') as f1:
-        #     for item in dataset_u:
-        #         f1.write("%s\n" % item)
+        #with open(self.DATALIST_FILE, 'w') as f1:
+            #for item in dataset_u:
+                #f1.write("%s\n" % item)
         #
         # with open(self.IPLIST_FILE, 'w') as f2:
         #     for item in person_u:
@@ -92,7 +92,7 @@ class InferRelData:
             reverse_idx = reverse_idx[:,:topk]
             related_datasets = np.array([dataset_u[k] for k in reverse_idx.flat]).reshape(reverse_idx.shape)
             for i in range(reverse_idx.shape[0]):
-                target_id = dataset_u[target_idx]
+                target_id = int(dataset_u[target_idx])
                 relrow = list(map(int, related_datasets[i]))
                 simrow = list(similarities[i, reverse_idx[i, :]])
                 # remove target dataset

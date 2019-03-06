@@ -11,6 +11,9 @@ from itertools import chain
 from multiprocessing import Process
 import gc
 import sys
+import urllib
+#shut off the SettingWithCopyWarning globally
+pd.options.mode.chained_assignment = None
 
 def main():
     #set logging info
@@ -39,6 +42,7 @@ def main():
     query_file = config['DATASOURCE']['query_file']
     DATAFRAME_FILE = config['DATASOURCE']['dataframe_file']
     final_result_file = config['DATASOURCE']['final_result_file']
+    DATALIST_FILE = config['DATASOURCE']['datalist_file']
     global start_time
     #1. import recent datasets
     start_time = time.time()
@@ -55,7 +59,7 @@ def main():
         #main_df['_id'] = main_df['request'].str.extract(r'PANGAEA.\s*(\d+)')
         #main_df = main_df.dropna(subset=['_id'], how='all')
         #main_df['_id'] = main_df['_id'].astype(int)
-        main_df.loc[:, '_id'] = main_df['request'].str.extract(r'PANGAEA.\s*(\d+)',expand=False)
+        main_df.loc[:, '_id'] = main_df['request'].str.extract(r'PANGAEA.\s?(\d+)',expand=False)
         main_df = main_df.dropna(subset=['_id'], how='all')
         main_df.loc[:, '_id'] = main_df['_id'].astype(int)
 
@@ -64,8 +68,10 @@ def main():
         if c1.last_harvest_date != 'none':
             # append old dataframe
             logging.info("Reading existing DF file...")
-            df_old = pd.read_csv(c1.DATAFRAME_FILE)
+            df_old = pd.read_pickle(c1.DATAFRAME_FILE)
             main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
+            #main_df['_id'] = main_df['_id'].astype(int)
+            #main_df = main_df.dropna(subset=['_id'], how='all')
             logging.info("Appended DF shape : %s ", str(main_df.shape))
             del df_old
             gc.collect()
@@ -74,15 +80,24 @@ def main():
 
         #TO-DO:
         logging.info("Writing DF to an external file...")
-        main_df.to_csv(DATAFRAME_FILE, index=False)
+        main_df.to_pickle(DATAFRAME_FILE)
 
         logging.info("Updating harvest date in config file...")
         c1.updateConfigFile()
     else:
         logging.info("No changes (new files) found, so old data (external file) will be used..")
-        main_df=pd.read_csv(c1.DATAFRAME_FILE)
+        main_df=pd.read_pickle(c1.DATAFRAME_FILE)
+        #main_df['_id'] = main_df['_id'].astype(int)
+        #main_df = main_df.dropna(subset=['_id'], how='all')
 
     if not main_df.empty:
+
+        #test only
+        # dd = main_df['_id'].values.tolist()
+        # with open(DATALIST_FILE, 'w') as f1:
+        #     for item in dd:
+        #         f1.write("%s\n" % item)
+
         logging.info("Excluding non-published datasets...")
         main_df = main_df[main_df['_id'].isin(list_published_datasets)]
         logging.info("DF with only published datasets : %s", str(main_df.shape))
@@ -160,12 +175,12 @@ def computeRelDatasetsByQuery(df_query,c1,query_file):
     domains = ['doi.pangaea.de', 'www.pangaea.de', '/search?']
     domains_joins = '|'.join(map(re.escape, domains))
     df_query = df_query[(df_query.referer.str.contains(domains_joins))]
+    df_query.loc[:, 'query_1']=df_query['referer'].map(get_query)
+    df_query.loc[:, 'query_2'] = ""
     df_query = c1.getQueryTerms(df_query)
     df_query = df_query.reset_index()
     df_query = df_query.set_index('_id')
-    # logging.info('Query Dataframe Shape: ' + str(df_query.shape))
     df_query.to_json(query_file, orient='index')
-    #secs = (time.time() - start_time1)
     del df_query
     gc.collect()
     #print('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
@@ -181,6 +196,15 @@ def computeRelDatasetsByDownload(main_df,config):
     #dwnInst = infer_reldataset2.InferRelData(config)
     dwnInst.get_Total_Related_Downloads(main_df)
 
+
+def get_query(url):
+    qparams = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(url).query))
+    query_string = ""
+    if len(qparams) > 0:
+        for key in qparams:
+            if re.match(r'f[.]|q|t|p', key):
+                query_string += qparams[key] + " "
+    return query_string
 
 if __name__ == "__main__":
     main()
