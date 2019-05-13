@@ -97,7 +97,7 @@ class ProcessLogs:
         #unwanted resources
         dfmain = dfmain[~dfmain['request'].str.match(r'^/media|^/static|^/admin|^/robots.txt$|^/favicon.ico$')]
         # filter crawlers by User-Agent
-        dfmain = dfmain[~dfmain['user_agent'].str.match(r'.*?bot|.*?spider|.*?crawler|.*?slurp', flags=re.I).fillna(False)]
+        dfmain = dfmain[~dfmain['user_agent'].str.match(r'.*?bot|.*?spider|.*?crawler|.*?slurp|.*?unpaywall', flags=re.I).fillna(False)]
 
         # added 21-02-20199
         dfmain['request'] = dfmain['request'].apply(urllib.parse.unquote)
