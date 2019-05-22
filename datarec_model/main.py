@@ -8,11 +8,13 @@ import datetime
 import logging
 import published_datasets,process_logs,infer_reldataset
 from itertools import chain
-from multiprocessing import Process
+from dateutil.relativedelta import relativedelta
+import datetime
+#from multiprocessing import Process
 import gc
 import sys
 import urllib
-#shut off the SettingWithCopyWarning globally
+#turn off the SettingWithCopyWarning globally
 pd.options.mode.chained_assignment = None
 
 def main():
@@ -44,6 +46,8 @@ def main():
     final_result_file = config['DATASOURCE']['final_result_file']
     DATALIST_FILE = config['DATASOURCE']['datalist_file']
     global start_time
+    global num_years
+    num_years = int(config['DATASOURCE']['num_years'])
     #1. import recent datasets
     start_time = time.time()
     logging.info('Importing published datasets...')
@@ -131,17 +135,20 @@ def main():
         # dwnInst.get_Total_Related_Downloads(main_df)
         # del main_df
 
-        p1 = Process(target=computeRelDatasetsByQuery,args=[main_df,c1,query_file])
+        #13.05.2019 comment out parellel operations -> query followed by usage data processing
+        #p1 = Process(target=computeRelDatasetsByQuery,args=[main_df,c1,query_file])
         logging.info("Start - Related Datasets By Query...")
-        p1.start()
+        computeRelDatasetsByQuery(main_df,c1,query_file)
+        logging.info('Query completed...')
+        #p1.start()
         logging.info("Start - Related Datasets By Downloads...")
         computeRelDatasetsByDownload(main_df,config)
         del main_df
         gc.collect()
         #p2 = Process(target=computeRelDatasetsByDownload,args=[main_df,config])
         #p2.start()
-        p1.join() #wait for this [thread/process] to complete
-        logging.info('Query completed...')
+        #p1.join() #wait for this [thread/process] to complete
+        #logging.info('Query completed...')
         #p2.join()
         logging.info("End - Related Datasets By Query and Download...")
 
@@ -190,8 +197,13 @@ def computeRelDatasetsByDownload(main_df,config):
     download_joins = '|'.join(map(re.escape, download_indicators))
     main_df = main_df[(main_df.request.str.contains(download_joins))]
     main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
+    #print(main_df.time.min(), main_df.time.max())
+    years_ago = datetime.datetime.today() - relativedelta(years=num_years)
+    years_ago = years_ago.date()
+    #years_ago=datetime.datetime.today() - datetime.timedelta(days=1*365)
+    # 13.05.2019 only select rows the last five years
+    main_df = main_df[main_df['time'] >= years_ago]
     main_df = main_df[['ip', '_id']]
-
     dwnInst = infer_reldataset.InferRelData(config)
     #dwnInst = infer_reldataset2.InferRelData(config)
     dwnInst.get_Total_Related_Downloads(main_df)
