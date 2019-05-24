@@ -4,11 +4,9 @@ import argparse
 import re
 import pandas as pd
 import time
-import datetime
 import logging
 import published_datasets,process_logs,infer_reldataset
 from itertools import chain
-from dateutil.relativedelta import relativedelta
 import datetime
 #from multiprocessing import Process
 import gc
@@ -47,7 +45,7 @@ def main():
     DATALIST_FILE = config['DATASOURCE']['datalist_file']
     global start_time
     global num_years
-    num_years = int(config['DATASOURCE']['num_years'])
+    #num_years = int(config['DATASOURCE']['log_max_years'])
     #1. import recent datasets
     start_time = time.time()
     logging.info('Importing published datasets...')
@@ -82,6 +80,10 @@ def main():
         else:
             logging.info("New DF (no append) : %s ", str(main_df.shape))
 
+        # 24.05.2019 only select data rows newer than the last XX years
+        dt_years_ago = c1.log_max_dt.date()
+        main_df = main_df[main_df['time'] >= dt_years_ago]
+
         #TO-DO:
         logging.info("Writing DF to an external file...")
         main_df.to_pickle(DATAFRAME_FILE)
@@ -95,7 +97,6 @@ def main():
         #main_df = main_df.dropna(subset=['_id'], how='all')
 
     if not main_df.empty:
-
         #test only
         # dd = main_df['_id'].values.tolist()
         # with open(DATALIST_FILE, 'w') as f1:
@@ -197,12 +198,12 @@ def computeRelDatasetsByDownload(main_df,config):
     download_joins = '|'.join(map(re.escape, download_indicators))
     main_df = main_df[(main_df.request.str.contains(download_joins))]
     main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
-    #print(main_df.time.min(), main_df.time.max())
-    years_ago = datetime.datetime.today() - relativedelta(years=num_years)
-    years_ago = years_ago.date()
+
+    #years_ago = datetime.datetime.today() - relativedelta(years=num_years)
+    #years_ago = years_ago.date()
     #years_ago=datetime.datetime.today() - datetime.timedelta(days=1*365)
     # 13.05.2019 only select rows the last five years
-    main_df = main_df[main_df['time'] >= years_ago]
+    #main_df = main_df[main_df['time'] >= years_ago]
     main_df = main_df[['ip', '_id']]
     dwnInst = infer_reldataset.InferRelData(config)
     #dwnInst = infer_reldataset2.InferRelData(config)

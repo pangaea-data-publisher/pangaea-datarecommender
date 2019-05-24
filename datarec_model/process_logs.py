@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import urllib
 import logging
+from dateutil.relativedelta import relativedelta
 
 class ProcessLogs:
     def __init__(self,cfg, cfgFile):
@@ -24,6 +25,9 @@ class ProcessLogs:
         #self.CHUNK_SIZE = int(config['DATASOURCE']['chunk_size'])
         #self.TOPK = int(config['DATASOURCE']['top_k'])
         self.last_harvest_date = (config['DATASOURCE']['last_harvest_date'])
+        self.log_max_years = int(config['DATASOURCE']['log_max_years'])
+        self.log_max_dt = datetime.datetime.today() - relativedelta(years=self.log_max_years)
+
         self.date_pattern = re.compile(r'\b(\d{8})0000.bz2\b')
         self.DATAFRAME_FILE = os.path.join(self.parent_dir, config['DATASOURCE']['dataframe_file'])
         self.last_date = None
@@ -31,12 +35,20 @@ class ProcessLogs:
 
     def readLogs(self):
         #dirs = os.path.join(self.parent_dir, self.source_dir)
+
         # get a list of file names
         files = os.listdir(self.source_dir)
-        file_list = [os.path.join(self.source_dir, filename) for filename in files if filename.startswith(self.source_file_prefix) and filename.endswith(self.source_file_suffix)]
+        file_list = [os.path.join(self.source_dir, filename) for filename in files if
+                     filename.startswith(self.source_file_prefix) and filename.endswith(self.source_file_suffix)]
+        # 25.04.2019 remove files less than the log_max_date
+        #for f in file_list:
+            #file_date = self.get_date(f)
+            #if file_date < self.log_max_dt:
+                #file_list.remove(f)
+        file_list = [x for x in file_list if self.get_date(x) > self.log_max_dt]
 
         #only select new files, excludes old files
-        if self.last_harvest_date !='none':
+        if self.last_harvest_date != 'none':
             # filter out old files
             filtered_file_list = []
             last_harv_date = datetime.datetime.strptime(self.last_harvest_date, '%Y%m%d')
@@ -45,10 +57,10 @@ class ProcessLogs:
                 if file_date > last_harv_date:
                     filtered_file_list.append(f)
             file_list = filtered_file_list
-        len_file = str(len(file_list))
-        logging.info('Number of new files : %s', len_file)
+
+        logging.info('Number of new files : %s', str(len(file_list)))
         if len(file_list)>0:
-            # set up your pool
+        # set up your pool
             pool = multiprocessing.Pool(self.number_of_processes)  # or whatever your hardware can support
             # have your pool map the file names to dataframes
             df_list = pool.map(self.read_csv, file_list)
