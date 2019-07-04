@@ -101,11 +101,11 @@ class ProcessLogs:
         return df
 
     def cleanLogs(self, dfmain):
-        # Filter out non GET and non 200 requests
+        # Filter out non GET and non 200/304 requests
         request = dfmain.request.str.split()
         #print(dfmain.head())
         dfmain["status"] = dfmain["status"].apply(pd.to_numeric, errors='ignore')
-        dfmain = dfmain[(request.str[0] == 'GET') & (dfmain.status == 200)]
+        dfmain = dfmain[(request.str[0] == 'GET') & ((dfmain.status == 200) | (dfmain.status == 304))]
         #unwanted resources
         dfmain = dfmain[~dfmain['request'].str.match(r'^/media|^/static|^/admin|^/robots.txt$|^/favicon.ico$')]
         # filter crawlers by User-Agent
