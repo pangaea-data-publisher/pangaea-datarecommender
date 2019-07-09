@@ -27,8 +27,9 @@ class ProcessLogs:
         self.last_harvest_date = (config['DATASOURCE']['last_harvest_date'])
         self.log_max_years = int(config['DATASOURCE']['log_max_years'])
         self.log_max_dt = datetime.datetime.today() - relativedelta(years=self.log_max_years)
-
-        self.date_pattern = re.compile(r'\b(\d{8})0000.bz2\b')
+        
+        # ignore time for now, but accept it in string:
+        self.date_pattern = re.compile(r'\b(\d{8})\d{4}\b.bz2\b')
         self.DATAFRAME_FILE = os.path.join(self.parent_dir, config['DATASOURCE']['dataframe_file'])
         self.last_date = None
         self.number_of_processes=  int(config['DATASOURCE']['number_of_processes'])
@@ -101,12 +102,14 @@ class ProcessLogs:
         return df
 
     def cleanLogs(self, dfmain):
+        # TODO: Remove the split and just do some regular expressions to filter!
         # Filter out non GET and non 200/304 requests
         request = dfmain.request.str.split()
         #print(dfmain.head())
         dfmain["status"] = dfmain["status"].apply(pd.to_numeric, errors='ignore')
         dfmain = dfmain[(request.str[0] == 'GET') & ((dfmain.status == 200) | (dfmain.status == 304))]
-        #unwanted resources
+        #unwanted resources:
+        # TODO: This does not work at all, as its applied to full request line.
         dfmain = dfmain[~dfmain['request'].str.match(r'^/media|^/static|^/admin|^/robots.txt$|^/favicon.ico$')]
         # filter crawlers by User-Agent
         dfmain = dfmain[~dfmain['user_agent'].str.match(r'.*?bot|.*?spider|.*?crawler|.*?slurp|.*?unpaywall', flags=re.I).fillna(False)]
