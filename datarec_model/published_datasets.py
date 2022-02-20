@@ -65,7 +65,7 @@ class PublishedDataset:
         usage_dir = dirname(dirname(abspath(__file__)))
         ids =[]
         for dobj in data:
-            ids.append(dobj["_id"])
+            ids.append(int(dobj["_id"]))
         logging.info('Number of datasets: %s',str(len(ids)))
 
         with open(self.data_file_dir,'wb') as fp:
