@@ -8,7 +8,6 @@ import logging
 import published_datasets,process_logs,infer_reldataset
 from itertools import chain
 import datetime
-#from multiprocessing import Process
 import gc
 import sys
 import urllib
@@ -42,7 +41,6 @@ def main():
     query_file = config['DATASOURCE']['query_file']
     DATAFRAME_FILE = config['DATASOURCE']['dataframe_file']
     final_result_file = config['DATASOURCE']['final_result_file']
-    DATALIST_FILE = config['DATASOURCE']['datalist_file']
     global start_time
     global num_years
     #num_years = int(config['DATASOURCE']['log_max_years'])
@@ -97,60 +95,17 @@ def main():
         #main_df = main_df.dropna(subset=['_id'], how='all')
 
     if not main_df.empty:
-        #test only
-        # dd = main_df['_id'].values.tolist()
-        # with open(DATALIST_FILE, 'w') as f1:
-        #     for item in dd:
-        #         f1.write("%s\n" % item)
-
         logging.info("Excluding non-published datasets...")
         main_df = main_df[main_df['_id'].isin(list_published_datasets)]
         logging.info("DF with only published datasets : %s", str(main_df.shape))
 
-        # ####### 3. get query terms
-        # # exlude rows that contains old data
-        # logging.info("Start - Related Datasets By Query...")
-        # df_query = main_df.copy()
-        # # only select referer related to pangaea, get query terms for each datasets
-        # domains = ['doi.pangaea.de', 'www.pangaea.de', '/search?']
-        # domains_joins = '|'.join(map(re.escape, domains))
-        # df_query = df_query[(df_query.referer.str.contains(domains_joins))]
-        # df_query = c1.getQueryTerms(df_query)
-        # df_query = df_query.reset_index()
-        # df_query = df_query.set_index('_id')
-        # #logging.info('Query Dataframe Shape: ' + str(df_query.shape))
-        # df_query.to_json(query_file, orient='index')
-        # secs = (time.time() - start_time)
-        # del df_query
-        # logging.info('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
-
-        # ####### 4. get usage related datasets
-        # logging.info("Start - Related Datasets By Downloads...")
-        # download_indicators = ['format=textfile', 'format=html', 'format=zip']
-        # download_joins = '|'.join(map(re.escape, download_indicators))
-        # main_df = main_df[(main_df.request.str.contains(download_joins))]
-        # main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
-        # main_df = main_df[['ip', '_id']]
-        #
-        # dwnInst = infer_reldataset.InferRelData(config)
-        # dwnInst.get_Total_Related_Downloads(main_df)
-        # del main_df
-
-        #13.05.2019 comment out parellel operations -> query followed by usage data processing
-        #p1 = Process(target=computeRelDatasetsByQuery,args=[main_df,c1,query_file])
         logging.info("Start - Related Datasets By Query...")
         computeRelDatasetsByQuery(main_df,c1,query_file)
         logging.info('Query completed...')
-        #p1.start()
         logging.info("Start - Related Datasets By Downloads...")
         computeRelDatasetsByDownload(main_df,config)
         del main_df
         gc.collect()
-        #p2 = Process(target=computeRelDatasetsByDownload,args=[main_df,config])
-        #p2.start()
-        #p1.join() #wait for this [thread/process] to complete
-        #logging.info('Query completed...')
-        #p2.join()
         logging.info("End - Related Datasets By Query and Download...")
 
         ######## 5. merge results
@@ -199,14 +154,8 @@ def computeRelDatasetsByDownload(main_df,config):
     main_df = main_df[(main_df.request.str.contains(download_joins))]
     main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
 
-    #years_ago = datetime.datetime.today() - relativedelta(years=num_years)
-    #years_ago = years_ago.date()
-    #years_ago=datetime.datetime.today() - datetime.timedelta(days=1*365)
-    # 13.05.2019 only select rows the last five years
-    #main_df = main_df[main_df['time'] >= years_ago]
     main_df = main_df[['ip', '_id']]
     dwnInst = infer_reldataset.InferRelData(config)
-    #dwnInst = infer_reldataset2.InferRelData(config)
     dwnInst.get_Total_Related_Downloads(main_df)
 
 
