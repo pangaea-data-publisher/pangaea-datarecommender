@@ -164,7 +164,7 @@ class ProcessLogs:
                 filtered.at[i2, 'query_2'] = row1["query_1"]
 
         filtered = filtered[~((filtered.query_1 == "") & (filtered.query_2 == ""))]
-        dfgroup = filtered.groupby('_id')['query_1', 'query_2'].apply(lambda x: x.sum())
+        dfgroup = filtered.groupby('_id')[['query_1', 'query_2']].apply(lambda x: x.sum())
 
         # strip white spaces
         dfgroup['query_1'] = dfgroup['query_1'].str.strip()
