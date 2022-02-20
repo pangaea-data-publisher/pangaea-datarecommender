@@ -34,8 +34,6 @@ class PublishedDataset:
         self.ES_INDEX=config['DATASOURCE']['elastic_index']
         self.DOC_TYPE= config['DATASOURCE']['elastic_type']
         self.size = 1000
-        #self.data_file_dir = '/pang_datarec/results/ids.p'
-        self.data_file_dir = config['DATASOURCE']['publised_data']
 
     def getDatasets(self):
         #start_time = time.time()
@@ -47,29 +45,25 @@ class PublishedDataset:
                body={
                    "query": {"match_all": {}}
                })
-        data = []
         sid = rs['_scroll_id']
         scroll_size = len(rs['hits']['hits'])
         #print(scroll_size)
         #before you scroll, process your current batch of hits
-        data = rs['hits']['hits']
+        ids = set()
+        for dobj in rs['hits']['hits']:
+            ids.add(int(dobj["_id"]))
 
         while (scroll_size > 0):
             try:
                 scroll_id = rs['_scroll_id']
                 rs = self.es.scroll(scroll_id=scroll_id, scroll='60s')
-                data += rs['hits']['hits']
+                for dobj in rs['hits']['hits']:
+                    ids.add(int(dobj["_id"]))
                 scroll_size = len(rs['hits']['hits'])
             except:
                 break
-        usage_dir = dirname(dirname(abspath(__file__)))
-        ids =[]
-        for dobj in data:
-            ids.append(int(dobj["_id"]))
-        logging.info('Number of datasets: %s',str(len(ids)))
 
-        with open(self.data_file_dir,'wb') as fp:
-            pickle.dump(ids, fp)
+        logging.info('Number of datasets: %s',str(len(ids)))
 
         #secs =  (time.time() - start_time)
         #logging.info('Get Published Dataset Total Execution Time: '+str(dt.timedelta(seconds=secs)))
