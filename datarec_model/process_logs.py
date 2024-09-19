@@ -106,7 +106,7 @@ class ProcessLogs:
         # Filter out non GET and non 200/304 requests
         request = dfmain.request.str.split()
         #print(dfmain.head())
-        dfmain["status"] = dfmain["status"].apply(pd.to_numeric, errors='ignore')
+        dfmain["status"] = dfmain["status"].apply(pd.to_numeric, errors='coerce')
         dfmain = dfmain[(request.str[0] == 'GET') & ((dfmain.status == 200) | (dfmain.status == 304))]
         #unwanted resources:
         # TODO: This does not work at all, as its applied to full request line.

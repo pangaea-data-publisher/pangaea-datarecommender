@@ -62,6 +62,7 @@ def main():
         main_df.loc[:, '_id'] = main_df['request'].str.extract(r'PANGAEA.\s?(\d+)',expand=False)
         main_df = main_df.dropna(subset=['_id'], how='all')
         main_df.loc[:, '_id'] = main_df['_id'].astype(int)
+        gc.collect()
 
         #if not main_df.empty:  # dataframe might be empty afterer dropna and extract operation
         df_old = None
@@ -69,7 +70,8 @@ def main():
             # append old dataframe
             logging.info("Reading existing DF file...")
             df_old = pd.read_pickle(c1.DATAFRAME_FILE)
-            main_df = df_old.append(main_df, sort=True, ignore_index=True).reset_index(drop=True)
+            logging.info("Append new DF...")
+            main_df = pandas.concat([df_old, main_df], sort=True, ignore_index=True, copy=False)
             #main_df['_id'] = main_df['_id'].astype(int)
             #main_df = main_df.dropna(subset=['_id'], how='all')
             logging.info("Appended DF shape : %s ", str(main_df.shape))
