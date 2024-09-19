@@ -71,7 +71,7 @@ def main():
             logging.info("Reading existing DF file...")
             df_old = pd.read_pickle(c1.DATAFRAME_FILE)
             logging.info("Append new DF...")
-            main_df = pandas.concat([df_old, main_df], sort=True, ignore_index=True, copy=False)
+            main_df = pd.concat([df_old, main_df], sort=True, ignore_index=True, copy=False)
             #main_df['_id'] = main_df['_id'].astype(int)
             #main_df = main_df.dropna(subset=['_id'], how='all')
             logging.info("Appended DF shape : %s ", str(main_df.shape))
