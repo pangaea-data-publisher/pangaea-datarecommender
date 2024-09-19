@@ -151,7 +151,7 @@ def computeRelDatasetsByQuery(df_query,c1,query_file):
     #print('Total Query Sim Time : ' + str(datetime.timedelta(seconds=secs)))
 
 def computeRelDatasetsByDownload(main_df,config):
-    download_indicators = ['format=textfile', 'format=html', 'format=zip']
+    download_indicators = ['format=textfile', 'format=html', 'format=zip', 'format=download']
     download_joins = '|'.join(map(re.escape, download_indicators))
     main_df = main_df[(main_df.request.str.contains(download_joins))]
     main_df = main_df.drop_duplicates(['time', 'ip', '_id'])
