@@ -65,12 +65,12 @@ class ProcessLogs:
             pool = multiprocessing.Pool(self.number_of_processes)  # or whatever your hardware can support
             # have your pool map the file names to dataframes
             df_list = pool.map(self.read_csv, file_list)
+            pool.close()
+            pool.join()
 
             # Concatenate all data into one DataFrame
             logging.info('Merging files...')
             df_final = pd.concat(df_list, ignore_index=True)
-            pool.close()
-            pool.join()
 
             #update config file
             dates = (self.get_date(fn) for fn in file_list)
