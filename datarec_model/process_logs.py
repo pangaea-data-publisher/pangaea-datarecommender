@@ -93,6 +93,7 @@ class ProcessLogs:
 
     # wrap your csv importer in a function that can be mapped
     def read_csv(self, filename):
+        logging.info('Read file: %s', filename)
         data = pd.read_csv(filename, compression='bz2', encoding='ISO-8859-1',
                                sep=r'\s(?=(?:[^"]*"[^"]*")*[^"]*$)(?![^\[]*\])', engine='python', header=0,
                                usecols=[0, 3, 4, 5, 7, 8],
