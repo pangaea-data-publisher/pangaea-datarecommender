@@ -25,8 +25,8 @@ class ProcessLogs:
         #self.CHUNK_SIZE = int(config['DATASOURCE']['chunk_size'])
         #self.TOPK = int(config['DATASOURCE']['top_k'])
         self.last_harvest_date = (config['DATASOURCE']['last_harvest_date'])
-        self.log_max_years = int(config['DATASOURCE']['log_max_years'])
-        self.log_max_dt = datetime.datetime.today() - relativedelta(years=self.log_max_years)
+        self.log_max_months = int(config['DATASOURCE']['log_max_months'])
+        self.log_max_dt = datetime.datetime.today() - relativedelta(months=self.log_max_months)
         
         # ignore time for now, but accept it in string:
         self.date_pattern = re.compile(r'\b(\d{8})\d{4}\b.bz2\b')
@@ -41,7 +41,7 @@ class ProcessLogs:
         files = os.listdir(self.source_dir)
         file_list = [os.path.join(self.source_dir, filename) for filename in files if
                      filename.startswith(self.source_file_prefix) and filename.endswith(self.source_file_suffix)]
-        # 25.04.2019 remove files less than the log_max_date
+        # 25.04.2019 remove files less than the log_max_months
         #for f in file_list:
             #file_date = self.get_date(f)
             #if file_date < self.log_max_dt:
