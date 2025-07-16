@@ -59,7 +59,7 @@ class ProcessLogs:
                     filtered_file_list.append(f)
             file_list = filtered_file_list
 
-        logging.info('Number of new files : %s', str(len(file_list)))
+        logging.info('Number of new files: %s', str(len(file_list)))
         if len(file_list)>0:
         # set up your pool
             pool = multiprocessing.Pool(self.number_of_processes)  # or whatever your hardware can support
@@ -67,6 +67,7 @@ class ProcessLogs:
             df_list = pool.map(self.read_csv, file_list)
 
             # Concatenate all data into one DataFrame
+            logging.info('Merging files...')
             df_final = pd.concat(df_list, ignore_index=True)
             pool.close()
             pool.join()
